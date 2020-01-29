@@ -37,6 +37,77 @@ github.com/markbates/pkger:/cmd/pkger/main.go
 $ go get github.com/markbates/pkger/cmd/pkger
 $ pkger -h
 ```
+## Usage
+
+### In Code
+
+The first step in using Packr is to create a new box. A box represents a folder on disk. Once you have a box you can get `string` or `[]byte` representations of the file.
+
+```go
+// set up a new box by giving it a (relative) path to a folder on disk:
+box := packr.NewBox("./templates")
+
+// Get the string representation of a file, or an error if it doesn't exist:
+html, err := box.FindString("index.html")
+
+// Get the []byte representation of a file, or an error if it doesn't exist:
+html, err := box.FindBytes("index.html")
+```
+
+### What is a Box?
+
+A box represents a folder, and any sub-folders, on disk that you want to have access to in your binary. When compiling a binary using the `packr` CLI the contents of the folder will be converted into Go files that can be compiled inside of a "standard" go binary. Inside of the compiled binary the files will be read from memory. When working locally the files will be read directly off of disk. This is a seamless switch that doesn't require any special attention on your part.
+
+#### Example
+
+Assume the follow directory structure:
+
+```
+├── main.go
+└── templates
+    ├── admin
+    │   └── index.html
+    └── index.html
+```
+
+The following program will read the `./templates/admin/index.html` file and print it out.
+
+```go
+package main
+
+import (
+  "fmt"
+
+  "github.com/gobuffalo/packr"
+)
+
+func main() {
+  box := packr.NewBox("./templates")
+
+  s, err := box.FindString("admin/index.html")
+  if err != nil {
+    log.Fatal(err)
+  }
+  fmt.Println(s)
+}
+```
+
+### Development Made Easy
+
+In order to get static files into a Go binary, those files must first be converted to Go code. To do that, Packr, ships with a few tools to help build binaries. See below.
+
+During development, however, it is painful to have to keep running a tool to compile those files.
+
+Packr uses the following resolution rules when looking for a file:
+
+1. Look for the file in-memory (inside a Go binary)
+1. Look for the file on disk (during development)
+
+Because Packr knows how to fall through to the file system, developers don't need to worry about constantly compiling their static files into a binary. They can work unimpeded.
+
+Packr takes file resolution a step further. When declaring a new box you use a relative path, `./templates`. When Packr receives this call it calculates out the absolute path to that directory. By doing this it means you can be guaranteed that Packr can find your files correctly, even if you're not running in the directory that the box was created in. This helps with the problem of testing, where Go changes the `pwd` for each package, making relative paths difficult to work with. This is not a problem when using Packr.
+
+---
 
 ### Usage
 
